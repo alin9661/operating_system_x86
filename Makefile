@@ -18,10 +18,10 @@ INCLUDE_DIR=include
 # Source files
 BOOT_SRC=$(BOOT_DIR)/boot.asm
 KERNEL_SRCS=$(KERNEL_DIR)/kernel.cpp \
-            $(KERNEL_DIR)/memory.cpp \
-            $(KERNEL_DIR)/interrupt.cpp \
-            $(KERNEL_DIR)/filesystem.cpp \
-            $(KERNEL_DIR)/process.cpp
+            $(KERNEL_DIR)/memory_compat.cpp \
+            $(KERNEL_DIR)/interrupt_compat.cpp \
+            $(KERNEL_DIR)/filesystem_compat.cpp \
+            $(KERNEL_DIR)/process_compat.cpp
 
 # Object files
 BOOT_BIN=$(BUILD_DIR)/boot.bin

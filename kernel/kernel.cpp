@@ -1,8 +1,8 @@
 #include <stdint.h>
-#include "memory.h"
-#include "interrupt.h"
-#include "filesystem.h"
-#include "process.h"
+#include "memory_compat.h"
+#include "interrupt_compat.h"
+#include "filesystem_compat.h"
+#include "process_compat.h"
 
 // Function to write a character to the screen
 void putchar(char c) {
@@ -78,7 +78,7 @@ extern "C" void kernel_main() {
 
     // Initialize memory management
     print("Initializing memory management...\n");
-    Memory::init();
+    Memory::init(nullptr, 0);  // Simple init for now
     print("Memory management initialized.\n");
 
     // Initialize interrupt handling

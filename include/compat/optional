@@ -1,0 +1,60 @@
+#pragma once
+
+namespace std {
+    struct nullopt_t {};
+    constexpr nullopt_t nullopt{};
+    
+    template<typename T>
+    class optional {
+        bool has_value_;
+        union {
+            char dummy_;
+            T value_;
+        };
+        
+    public:
+        optional() : has_value_(false), dummy_() {}
+        optional(nullopt_t) : has_value_(false), dummy_() {}
+        optional(const T& value) : has_value_(true), value_(value) {}
+        optional(T&& value) : has_value_(true), value_(static_cast<T&&>(value)) {}
+        
+        ~optional() {
+            if (has_value_) {
+                value_.~T();
+            }
+        }
+        
+        optional(const optional& other) : has_value_(other.has_value_) {
+            if (has_value_) {
+                new(&value_) T(other.value_);
+            }
+        }
+        
+        optional& operator=(const optional& other) {
+            if (this != &other) {
+                if (has_value_) {
+                    value_.~T();
+                }
+                has_value_ = other.has_value_;
+                if (has_value_) {
+                    new(&value_) T(other.value_);
+                }
+            }
+            return *this;
+        }
+        
+        bool has_value() const { return has_value_; }
+        operator bool() const { return has_value_; }
+        
+        T& value() & { return value_; }
+        const T& value() const& { return value_; }
+        T&& value() && { return static_cast<T&&>(value_); }
+        
+        T& operator*() & { return value_; }
+        const T& operator*() const& { return value_; }
+        T&& operator*() && { return static_cast<T&&>(value_); }
+        
+        T* operator->() { return &value_; }
+        const T* operator->() const { return &value_; }
+    };
+}
