@@ -13,7 +13,7 @@ extern __bss_end              ; End of BSS section
 extern __stack_top            ; Top of kernel stack
 
 ; Kernel entry point called by UEFI bootloader
-section .text.boot
+section .text
 global _start
 _start:
     ; At this point we are in 64-bit long mode, called by UEFI bootloader

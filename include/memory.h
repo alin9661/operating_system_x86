@@ -3,12 +3,81 @@
 #include <cstdint>
 #include <cstddef>
 #include <memory>
-#include <expected>
 #include <concepts>
 #include <span>
 #include <array>
 #include <atomic>
 #include <bit>
+
+// Compatibility for std::expected (not available in all C++20 implementations)
+#if __has_include(<expected>) && __cplusplus >= 202302L
+#include <expected>
+namespace compat {
+    template<typename T, typename E>
+    using expected = std::expected<T, E>;
+    template<typename E>
+    using unexpected = std::unexpected<E>;
+}
+#else
+// Simple implementation for systems without std::expected
+namespace compat {
+    template<typename E>
+    struct unexpected {
+        E error;
+        explicit unexpected(E e) : error(e) {}
+    };
+    
+    template<typename T, typename E>
+    class expected {
+        union {
+            T value_;
+            E error_;
+        };
+        bool has_value_;
+        
+    public:
+        expected(T value) : value_(value), has_value_(true) {}
+        expected(unexpected<E> err) : error_(err.error), has_value_(false) {}
+        
+        ~expected() {
+            if (has_value_) {
+                value_.~T();
+            } else {
+                error_.~E();
+            }
+        }
+        
+        bool has_value() const noexcept { return has_value_; }
+        operator bool() const noexcept { return has_value_; }
+        
+        T& value() & { return value_; }
+        const T& value() const& { return value_; }
+        T&& value() && { return std::move(value_); }
+        
+        E& error() & { return error_; }
+        const E& error() const& { return error_; }
+    };
+    
+    // Specialization for void
+    template<typename E>
+    class expected<void, E> {
+        E error_;
+        bool has_value_;
+        
+    public:
+        expected() : has_value_(true) {}
+        expected(unexpected<E> err) : error_(err.error), has_value_(false) {}
+        
+        bool has_value() const noexcept { return has_value_; }
+        operator bool() const noexcept { return has_value_; }
+        
+        void value() const { /* void */ }
+        
+        E& error() & { return error_; }
+        const E& error() const& { return error_; }
+    };
+}
+#endif
 
 namespace Memory {
     // Modern C++20 constants
@@ -192,7 +261,7 @@ namespace Memory {
     
     // Memory allocation result type
     template<typename T>
-    using AllocResult = std::expected<T, MemoryError>;
+    using AllocResult = compat::expected<T, MemoryError>;
     
     // Function declarations with modern C++20 features
     
@@ -342,10 +411,4 @@ namespace Memory {
     
 } // namespace Memory
 
-// Global operators for kernel memory management
-void* operator new(std::size_t size) noexcept;
-void* operator new[](std::size_t size) noexcept;
-void operator delete(void* ptr) noexcept;
-void operator delete[](void* ptr) noexcept;
-void operator delete(void* ptr, std::size_t size) noexcept;
-void operator delete[](void* ptr, std::size_t size) noexcept; 
+// Note: Global operators are implemented in memory.cpp to avoid conflicts 

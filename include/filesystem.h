@@ -3,8 +3,8 @@
 #include <cstdint>
 #include <cstddef>
 #include <memory>
-#include <expected>
 #include <concepts>
+#include "memory.h"  // For compat::expected
 #include <string>
 #include <string_view>
 #include <span>
@@ -313,10 +313,10 @@ namespace FileSystem {
     // File handle concept
     template<typename T>
     concept FileHandleType = requires(T handle) {
-        { handle.read(std::span<std::byte>{}) } -> std::same_as<std::expected<std::size_t, FileSystemError>>;
-        { handle.write(std::span<const std::byte>{}) } -> std::same_as<std::expected<std::size_t, FileSystemError>>;
-        { handle.seek(std::int64_t{}, SeekOrigin{}) } -> std::same_as<std::expected<std::uint64_t, FileSystemError>>;
-        { handle.close() } -> std::same_as<std::expected<void, FileSystemError>>;
+        { handle.read(std::span<std::byte>{}) } -> std::same_as<compat::expected<std::size_t, FileSystemError>>;
+        { handle.write(std::span<const std::byte>{}) } -> std::same_as<compat::expected<std::size_t, FileSystemError>>;
+        { handle.seek(std::int64_t{}, SeekOrigin{}) } -> std::same_as<compat::expected<std::uint64_t, FileSystemError>>;
+        { handle.close() } -> std::same_as<compat::expected<void, FileSystemError>>;
     };
     
     // Path concept
@@ -327,7 +327,7 @@ namespace FileSystem {
     
     // File system result type
     template<typename T>
-    using FSResult = std::expected<T, FileSystemError>;
+    using FSResult = compat::expected<T, FileSystemError>;
     
     // RAII file handle
     class FileHandle {
