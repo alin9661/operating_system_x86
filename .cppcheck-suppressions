@@ -1,0 +1,36 @@
+# Cppcheck suppressions for ModernOS
+# These suppressions are for kernel-specific code patterns that are intentional
+
+# Suppress warnings about unused functions in kernel code
+# Many kernel functions are called from assembly or hardware interrupts
+unusedFunction
+
+# Suppress warnings about uninitialized variables in inline assembly
+# Assembly code often uses registers that cppcheck doesn't understand
+uninitvar:kernel/interrupt.cpp
+uninitvar:kernel/process.cpp
+uninitvar:kernel/memory.cpp
+
+# Suppress warnings about direct memory access
+# Kernel code legitimately accesses hardware memory addresses
+nullPointer:kernel/kernel.cpp:10
+nullPointer:kernel/memory.cpp
+
+# Suppress warnings about infinite loops in kernel code
+# Some kernel functions intentionally run forever
+infiniteLoop:kernel/kernel.cpp
+infiniteLoop:kernel/interrupt.cpp
+
+# Suppress warnings about unused parameters in interrupt handlers
+# Interrupt handlers often have standard signatures with unused parameters
+unusedVariable:kernel/interrupt.cpp
+
+# Suppress warnings about casting between different pointer types
+# Kernel code often casts between hardware addresses and pointers
+cstyleCast:kernel/memory.cpp
+cstyleCast:kernel/interrupt.cpp
+
+# Suppress warnings about C-style arrays in kernel data structures
+# Kernel often uses fixed-size arrays for hardware compatibility
+cstylecast
+variableScope

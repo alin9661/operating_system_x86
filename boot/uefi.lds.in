@@ -1,0 +1,76 @@
+/* UEFI Linker Script for x86_64 */
+OUTPUT_FORMAT("elf64-x86-64", "elf64-x86-64", "elf64-x86-64")
+OUTPUT_ARCH(i386:x86-64)
+ENTRY(_start)
+
+SECTIONS
+{
+    . = 0x10000000;
+    
+    .text : ALIGN(4096)
+    {
+        _text = .;
+        *(.text.head)
+        *(.text)
+        *(.text.*)
+        . = ALIGN(16);
+    }
+    
+    _etext = .;
+    
+    .reloc : ALIGN(4096)
+    {
+        *(.reloc)
+    }
+    
+    .data : ALIGN(4096)
+    {
+        _data = .;
+        *(.rodata*)
+        *(.got.plt)
+        *(.got)
+        *(.data*)
+        *(.sdata)
+        . = ALIGN(16);
+        _gp = .;
+        *(.sbss)
+        *(.scommon)
+        *(.dynbss)
+        *(.bss)
+        *(COMMON)
+        . = ALIGN(16);
+        _bss_end = .;
+    }
+    
+    .dynamic : { *(.dynamic) }
+    .dynstr : { *(.dynstr) }
+    .dynsym : { *(.dynsym) }
+    .rel : { *(.rel*) }
+    
+    . = ALIGN(4096);
+    .rela : 
+    { 
+        *(.rela.dyn)
+        *(.rela.plt)
+        *(.rela.got)
+        *(.rela.data*)
+        *(.rela.text*)
+    }
+    
+    _edata = .;
+    _data_size = . - _text;
+    
+    /DISCARD/ :
+    {
+        *(.note.GNU-stack)
+        *(.gnu_debuglink)
+        *(.interp)
+        *(.dynsym)
+        *(.dynstr)
+        *(.dynamic)
+        *(.hash)
+        *(.gnu.hash)
+        *(.comment)
+        *(.eh_frame*)
+    }
+}

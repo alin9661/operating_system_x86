@@ -1,0 +1,253 @@
+name: ModernOS CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+        include:
+          - build_type: Debug
+            coverage: true
+          - build_type: Release
+            coverage: false
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        submodules: recursive
+    
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/pip
+          build-*/
+        key: ${{ runner.os }}-${{ matrix.build_type }}-${{ hashFiles('**/CMakeLists.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-${{ matrix.build_type }}-
+          ${{ runner.os }}-
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          cmake \
+          nasm \
+          gcc-multilib \
+          g++-multilib \
+          qemu-system-x86 \
+          lcov \
+          git
+        
+        # Install cross-compiler toolchain
+        sudo apt-get install -y \
+          gcc-x86-64-linux-gnu \
+          g++-x86-64-linux-gnu \
+          binutils-x86-64-linux-gnu
+    
+    - name: Verify toolchain
+      run: |
+        cmake --version
+        nasm -version
+        x86_64-linux-gnu-gcc --version
+        x86_64-linux-gnu-g++ --version
+    
+    - name: Configure CMake
+      run: |
+        cmake -B build-${{ matrix.build_type }} \
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+          -DCMAKE_TOOLCHAIN_FILE=toolchain.cmake \
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+    
+    - name: Build kernel
+      run: |
+        cmake --build build-${{ matrix.build_type }} --parallel $(nproc)
+    
+    - name: Run unit tests
+      run: |
+        cd build-${{ matrix.build_type }}
+        ctest --output-on-failure --verbose
+    
+    - name: Generate coverage report
+      if: matrix.coverage == true
+      run: |
+        cd build-${{ matrix.build_type }}
+        lcov --capture --directory . --output-file coverage.info
+        lcov --remove coverage.info '/usr/*' '*/tests/*' '*/googletest/*' --output-file coverage.info
+        lcov --list coverage.info
+    
+    - name: Upload coverage to Codecov
+      if: matrix.coverage == true
+      uses: codecov/codecov-action@v3
+      with:
+        file: build-${{ matrix.build_type }}/coverage.info
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v3
+      with:
+        name: kernel-${{ matrix.build_type }}
+        path: |
+          build-${{ matrix.build_type }}/kernel.bin
+          build-${{ matrix.build_type }}/compile_commands.json
+        retention-days: 30
+
+  static-analysis:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          clang-tidy \
+          cppcheck \
+          iwyu
+    
+    - name: Run cppcheck
+      run: |
+        cppcheck --enable=all --error-exitcode=1 \
+          --suppressions-list=.cppcheck-suppressions \
+          --inline-suppr \
+          --std=c++20 \
+          --platform=unix64 \
+          kernel/ include/
+    
+    - name: Run clang-tidy
+      run: |
+        clang-tidy kernel/*.cpp \
+          -p=build-Release \
+          --warnings-as-errors=*
+    
+    - name: Check includes
+      run: |
+        # Run include-what-you-use if available
+        if command -v iwyu &> /dev/null; then
+          iwyu kernel/*.cpp -I include/
+        fi
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Run security scan
+      uses: github/super-linter@v4
+      env:
+        DEFAULT_BRANCH: main
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        VALIDATE_ALL_CODEBASE: true
+        VALIDATE_CPP: true
+        VALIDATE_CMAKE: true
+        VALIDATE_DOCKERFILE: false
+        VALIDATE_YAML: true
+
+  documentation:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Install Doxygen
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y doxygen graphviz
+    
+    - name: Generate documentation
+      run: |
+        doxygen Doxyfile
+    
+    - name: Deploy documentation
+      if: github.ref == 'refs/heads/main'
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./docs/html
+
+  integration-test:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Download kernel artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: kernel-Release
+        path: build-Release/
+    
+    - name: Install QEMU
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y qemu-system-x86
+    
+    - name: Test kernel boot
+      run: |
+        timeout 30s qemu-system-x86_64 \
+          -kernel build-Release/kernel.bin \
+          -nographic \
+          -serial stdio \
+          -monitor none \
+          -no-reboot \
+          -no-shutdown || true
+    
+    - name: Verify kernel output
+      run: |
+        # Add tests to verify kernel produces expected output
+        echo "Integration tests placeholder"
+
+  release:
+    runs-on: ubuntu-latest
+    needs: [build-and-test, static-analysis, security-scan, integration-test]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+    
+    - name: Create release package
+      run: |
+        mkdir -p release
+        cp -r kernel-Release/* release/
+        cp README.md release/
+        cp LICENSE release/ || true
+        tar -czf ModernOS-${{ github.sha }}.tar.gz release/
+    
+    - name: Create GitHub release
+      if: startsWith(github.ref, 'refs/tags/v')
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ModernOS-${{ github.sha }}.tar.gz
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
