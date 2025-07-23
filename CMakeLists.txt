@@ -35,6 +35,7 @@ set(KERNEL_SOURCES
     kernel/interrupt.cpp
     kernel/filesystem.cpp
     kernel/process.cpp
+    kernel/shell.cpp
 )
 
 # Header files
@@ -43,6 +44,7 @@ set(KERNEL_HEADERS
     include/interrupt.h
     include/filesystem.h
     include/process.h
+    include/shell.h
 )
 
 # Create 64-bit kernel executable

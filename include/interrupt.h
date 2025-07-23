@@ -1,17 +1,17 @@
 #pragma once
 
-#include <cstdint>
-#include <cstddef>
-#include <memory>
-#include <expected>
-#include <concepts>
+#include "compat/cstdint"
+#include "compat/cstddef"
+#include "compat/memory"
+#include "compat/expected"
+#include "compat/concepts"
 #include <functional>
-#include <array>
-#include <atomic>
+#include "compat/array"
+#include "compat/atomic"
 #include <chrono>
 #include <string_view>
 #include <bitset>
-#include <span>
+#include "compat/span"
 #include <optional>
 #include <vector>
 #include <unordered_map>
@@ -223,7 +223,7 @@ namespace Interrupt {
     
     // Interrupt result type
     template<typename T>
-    using InterruptResult = std::expected<T, InterruptError>;
+    using InterruptResult = compat::expected<T, InterruptError>;
     
     // RAII interrupt state guard
     class InterruptGuard {
