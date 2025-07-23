@@ -1,0 +1,32 @@
+[
+{
+  "directory": "/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/build-release",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I\"/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/include\"  -Wall -Wextra -Werror -g -O3 -DNDEBUG -O2 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk -mmacosx-version-min=14.1 -o CMakeFiles/kernel.dir/kernel/kernel_main64.cpp.o -c \"/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/kernel/kernel_main64.cpp\"",
+  "file": "/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/kernel/kernel_main64.cpp",
+  "output": "CMakeFiles/kernel.dir/kernel/kernel_main64.cpp.o"
+},
+{
+  "directory": "/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/build-release",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I\"/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/include\"  -Wall -Wextra -Werror -g -O3 -DNDEBUG -O2 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk -mmacosx-version-min=14.1 -o CMakeFiles/kernel.dir/kernel/memory.cpp.o -c \"/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/kernel/memory.cpp\"",
+  "file": "/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/kernel/memory.cpp",
+  "output": "CMakeFiles/kernel.dir/kernel/memory.cpp.o"
+},
+{
+  "directory": "/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/build-release",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I\"/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/include\"  -Wall -Wextra -Werror -g -O3 -DNDEBUG -O2 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk -mmacosx-version-min=14.1 -o CMakeFiles/kernel.dir/kernel/interrupt.cpp.o -c \"/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/kernel/interrupt.cpp\"",
+  "file": "/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/kernel/interrupt.cpp",
+  "output": "CMakeFiles/kernel.dir/kernel/interrupt.cpp.o"
+},
+{
+  "directory": "/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/build-release",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I\"/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/include\"  -Wall -Wextra -Werror -g -O3 -DNDEBUG -O2 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk -mmacosx-version-min=14.1 -o CMakeFiles/kernel.dir/kernel/filesystem.cpp.o -c \"/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/kernel/filesystem.cpp\"",
+  "file": "/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/kernel/filesystem.cpp",
+  "output": "CMakeFiles/kernel.dir/kernel/filesystem.cpp.o"
+},
+{
+  "directory": "/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/build-release",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I\"/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/include\"  -Wall -Wextra -Werror -g -O3 -DNDEBUG -O2 -DNDEBUG -std=c++20 -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.2.sdk -mmacosx-version-min=14.1 -o CMakeFiles/kernel.dir/kernel/process.cpp.o -c \"/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/kernel/process.cpp\"",
+  "file": "/Users/aaronlin/Downloads/Learning/Projects/Vibe Code Projects/c++ operating system/kernel/process.cpp",
+  "output": "CMakeFiles/kernel.dir/kernel/process.cpp.o"
+}
+]

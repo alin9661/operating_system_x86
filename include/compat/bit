@@ -1,0 +1,15 @@
+#pragma once
+#include <stdint.h>
+
+namespace std {
+    // Simple bit width implementation
+    inline uint32_t bit_width(uint64_t x) {
+        if (x == 0) return 0;
+        uint32_t width = 0;
+        while (x) {
+            x >>= 1;
+            ++width;
+        }
+        return width;
+    }
+}

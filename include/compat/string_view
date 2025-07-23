@@ -1,0 +1,28 @@
+#pragma once
+#include <stddef.h>
+
+namespace std {
+    class string_view {
+        const char* data_;
+        size_t size_;
+        
+    public:
+        string_view() : data_(nullptr), size_(0) {}
+        string_view(const char* s) : data_(s), size_(0) {
+            if (s) {
+                while (s[size_]) ++size_;
+            }
+        }
+        string_view(const char* s, size_t len) : data_(s), size_(len) {}
+        
+        const char* data() const { return data_; }
+        size_t size() const { return size_; }
+        size_t length() const { return size_; }
+        bool empty() const { return size_ == 0; }
+        
+        const char& operator[](size_t pos) const { return data_[pos]; }
+        
+        const char* begin() const { return data_; }
+        const char* end() const { return data_ + size_; }
+    };
+}

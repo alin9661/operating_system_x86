@@ -1,14 +1,23 @@
 #pragma once
 
-#include <cstdint>
-#include <cstddef>
-#include <memory>
-#include <expected>
-#include <concepts>
-#include <span>
-#include <array>
-#include <atomic>
-#include <bit>
+#include "compat/cstdint"
+#include "compat/cstddef"
+#include "compat/memory"
+#include "compat/concepts"
+#include "compat/span"
+#include "compat/array"
+#include "compat/atomic"
+#include "compat/bit"
+
+#include "compat/expected"
+
+// Use std::expected from compatibility layer
+namespace compat {
+    template<typename T, typename E>
+    using expected = std::expected<T, E>;
+    template<typename E>
+    using unexpected = std::unexpected<E>;
+}
 
 namespace Memory {
     // Modern C++20 constants
@@ -192,7 +201,7 @@ namespace Memory {
     
     // Memory allocation result type
     template<typename T>
-    using AllocResult = std::expected<T, MemoryError>;
+    using AllocResult = compat::expected<T, MemoryError>;
     
     // Function declarations with modern C++20 features
     
@@ -342,10 +351,4 @@ namespace Memory {
     
 } // namespace Memory
 
-// Global operators for kernel memory management
-void* operator new(std::size_t size) noexcept;
-void* operator new[](std::size_t size) noexcept;
-void operator delete(void* ptr) noexcept;
-void operator delete[](void* ptr) noexcept;
-void operator delete(void* ptr, std::size_t size) noexcept;
-void operator delete[](void* ptr, std::size_t size) noexcept; 
+// Note: Global operators are implemented in memory.cpp to avoid conflicts 

@@ -16,6 +16,7 @@
 #include "../include/interrupt.h" 
 #include "../include/process.h"
 #include "../include/filesystem.h"
+#include "../include/shell.h"
 
 // UEFI boot configuration structure (matching bootloader)
 struct BootConfig {
@@ -237,37 +238,272 @@ extern "C" void handle_exception(void* interrupt_frame) noexcept {
     }
 }
 
-// System call handling
+// Modern system call handling
 extern "C" std::uint64_t handle_syscall(std::uint64_t syscall_num, 
                                        std::uint64_t arg1, std::uint64_t arg2,
                                        std::uint64_t arg3, std::uint64_t arg4,
                                        std::uint64_t arg5, std::uint64_t arg6) noexcept {
-    // Simple system call dispatcher
+    // System call numbers (Linux-compatible)
+    enum SystemCall : std::uint64_t {
+        SYS_READ = 0,
+        SYS_WRITE = 1,
+        SYS_OPEN = 2,
+        SYS_CLOSE = 3,
+        SYS_STAT = 4,
+        SYS_FSTAT = 5,
+        SYS_LSTAT = 6,
+        SYS_POLL = 7,
+        SYS_LSEEK = 8,
+        SYS_MMAP = 9,
+        SYS_MPROTECT = 10,
+        SYS_MUNMAP = 11,
+        SYS_BRK = 12,
+        SYS_RT_SIGACTION = 13,
+        SYS_RT_SIGPROCMASK = 14,
+        SYS_RT_SIGRETURN = 15,
+        SYS_IOCTL = 16,
+        SYS_PREAD64 = 17,
+        SYS_PWRITE64 = 18,
+        SYS_READV = 19,
+        SYS_WRITEV = 20,
+        SYS_ACCESS = 21,
+        SYS_PIPE = 22,
+        SYS_SELECT = 23,
+        SYS_SCHED_YIELD = 24,
+        SYS_MREMAP = 25,
+        SYS_MSYNC = 26,
+        SYS_MINCORE = 27,
+        SYS_MADVISE = 28,
+        SYS_SHMGET = 29,
+        SYS_SHMAT = 30,
+        SYS_SHMCTL = 31,
+        SYS_DUP = 32,
+        SYS_DUP2 = 33,
+        SYS_PAUSE = 34,
+        SYS_NANOSLEEP = 35,
+        SYS_GETITIMER = 36,
+        SYS_ALARM = 37,
+        SYS_SETITIMER = 38,
+        SYS_GETPID = 39,
+        SYS_SENDFILE = 40,
+        SYS_SOCKET = 41,
+        SYS_CONNECT = 42,
+        SYS_ACCEPT = 43,
+        SYS_SENDTO = 44,
+        SYS_RECVFROM = 45,
+        SYS_SENDMSG = 46,
+        SYS_RECVMSG = 47,
+        SYS_SHUTDOWN = 48,
+        SYS_BIND = 49,
+        SYS_LISTEN = 50,
+        SYS_GETSOCKNAME = 51,
+        SYS_GETPEERNAME = 52,
+        SYS_SOCKETPAIR = 53,
+        SYS_SETSOCKOPT = 54,
+        SYS_GETSOCKOPT = 55,
+        SYS_CLONE = 56,
+        SYS_FORK = 57,
+        SYS_VFORK = 58,
+        SYS_EXECVE = 59,
+        SYS_EXIT = 60,
+        SYS_WAIT4 = 61,
+        SYS_KILL = 62,
+        SYS_UNAME = 63,
+        SYS_SEMGET = 64,
+        SYS_SEMOP = 65,
+        SYS_SEMCTL = 66,
+        SYS_SHMDT = 67,
+        SYS_MSGGET = 68,
+        SYS_MSGSND = 69,
+        SYS_MSGRCV = 70,
+        SYS_MSGCTL = 71,
+        SYS_FCNTL = 72,
+        SYS_FLOCK = 73,
+        SYS_FSYNC = 74,
+        SYS_FDATASYNC = 75,
+        SYS_TRUNCATE = 76,
+        SYS_FTRUNCATE = 77,
+        SYS_GETDENTS = 78,
+        SYS_GETCWD = 79,
+        SYS_CHDIR = 80,
+        SYS_FCHDIR = 81,
+        SYS_RENAME = 82,
+        SYS_MKDIR = 83,
+        SYS_RMDIR = 84,
+        SYS_CREAT = 85,
+        SYS_LINK = 86,
+        SYS_UNLINK = 87,
+        SYS_SYMLINK = 88,
+        SYS_READLINK = 89,
+        SYS_CHMOD = 90,
+        SYS_FCHMOD = 91,
+        SYS_CHOWN = 92,
+        SYS_FCHOWN = 93,
+        SYS_LCHOWN = 94,
+        SYS_UMASK = 95,
+        SYS_GETTIMEOFDAY = 96,
+        SYS_GETRLIMIT = 97,
+        SYS_GETRUSAGE = 98,
+        SYS_SYSINFO = 99,
+        SYS_TIMES = 100
+    };
+    
     switch (syscall_num) {
-        case 0: // sys_exit
-            Console::print("Process exit requested\n");
-            return 0;
+        case SYS_EXIT: {
+            // Exit current process
+            Process::SystemCalls::sys_exit(static_cast<int>(arg1));
+            return 0; // Never reached
+        }
+        
+        case SYS_WRITE: {
+            // Write to file descriptor
+            auto fd = static_cast<FileSystem::FileDescriptor>(arg1);
+            const char* buffer = reinterpret_cast<const char*>(arg2);
+            auto count = static_cast<std::size_t>(arg3);
             
-        case 1: // sys_write (simplified)
-            if (arg1 == 1) { // stdout
-                const char* str = reinterpret_cast<const char*>(arg2);
-                const std::size_t len = arg3;
-                for (std::size_t i = 0; i < len; ++i) {
-                    Console::putchar(str[i]);
+            if (fd == FileSystem::STDOUT_FD || fd == FileSystem::STDERR_FD) {
+                // Write to console
+                for (std::size_t i = 0; i < count; ++i) {
+                    Console::putchar(buffer[i]);
                 }
-                return len;
+                return count;
+            } else {
+                // TODO: Implement file descriptor write
+                return -1; // EBADF
             }
-            return -1;
+        }
+        
+        case SYS_READ: {
+            // Read from file descriptor
+            auto fd = static_cast<FileSystem::FileDescriptor>(arg1);
+            char* buffer = reinterpret_cast<char*>(arg2);
+            auto count = static_cast<std::size_t>(arg3);
             
+            if (fd == FileSystem::STDIN_FD) {
+                // TODO: Implement keyboard input
+                return 0;
+            } else {
+                // TODO: Implement file descriptor read
+                return -1; // EBADF
+            }
+        }
+        
+        case SYS_OPEN: {
+            // Open file
+            const char* pathname = reinterpret_cast<const char*>(arg1);
+            auto flags = static_cast<int>(arg2);
+            auto mode = static_cast<FileSystem::FilePermissions>(arg3);
+            
+            // Convert flags to AccessMode
+            FileSystem::AccessMode access_mode = FileSystem::AccessMode::ReadOnly;
+            if (flags & 1) access_mode = FileSystem::AccessMode::WriteOnly;
+            if (flags & 2) access_mode = FileSystem::AccessMode::ReadWrite;
+            if (flags & 64) access_mode = FileSystem::AccessMode::Create;
+            
+            auto file_result = FileSystem::open(pathname, access_mode);
+            if (file_result.has_value()) {
+                return file_result.value().descriptor();
+            } else {
+                return -1; // Error
+            }
+        }
+        
+        case SYS_CLOSE: {
+            // Close file descriptor
+            auto fd = static_cast<FileSystem::FileDescriptor>(arg1);
+            // TODO: Implement proper file descriptor closing
+            return 0;
+        }
+        
+        case SYS_GETPID: {
+            // Get process ID
+            return Process::SystemCalls::sys_getpid();
+        }
+        
+        case SYS_GETPPID: {
+            // Get parent process ID
+            return Process::SystemCalls::sys_getppid();
+        }
+        
+        case SYS_FORK: {
+            // Fork process
+            auto fork_result = Process::SystemCalls::sys_fork();
+            if (fork_result.has_value()) {
+                return fork_result.value();
+            } else {
+                return -1;
+            }
+        }
+        
+        case SYS_MKDIR: {
+            // Create directory
+            const char* pathname = reinterpret_cast<const char*>(arg1);
+            auto mode = static_cast<FileSystem::FilePermissions>(arg2);
+            
+            auto result = FileSystem::create_directory(pathname, mode, false);
+            return result.has_value() ? 0 : -1;
+        }
+        
+        case SYS_RMDIR: {
+            // Remove directory
+            const char* pathname = reinterpret_cast<const char*>(arg1);
+            // TODO: Implement directory removal
+            return -1;
+        }
+        
+        case SYS_CHDIR: {
+            // Change directory
+            const char* pathname = reinterpret_cast<const char*>(arg1);
+            auto result = FileSystem::set_current_directory(pathname);
+            return result.has_value() ? 0 : -1;
+        }
+        
+        case SYS_GETCWD: {
+            // Get current working directory
+            char* buffer = reinterpret_cast<char*>(arg1);
+            auto size = static_cast<std::size_t>(arg2);
+            
+            auto cwd = FileSystem::get_current_directory();
+            auto cwd_str = cwd.string();
+            
+            if (cwd_str.length() + 1 <= size) {
+                std::strcpy(buffer, cwd_str.c_str());
+                return reinterpret_cast<std::uint64_t>(buffer);
+            } else {
+                return 0; // ERANGE
+            }
+        }
+        
+        case SYS_ACCESS: {
+            // Check file accessibility
+            const char* pathname = reinterpret_cast<const char*>(arg1);
+            auto mode = static_cast<int>(arg2);
+            
+            return FileSystem::exists(pathname) ? 0 : -1;
+        }
+        
+        case SYS_SCHED_YIELD: {
+            // Yield CPU to other processes
+            auto result = Process::yield();
+            return result.has_value() ? 0 : -1;
+        }
+        
+        case SYS_NANOSLEEP: {
+            // Sleep for specified time
+            // TODO: Implement proper sleep with timespec
+            Process::sleep(std::chrono::milliseconds(100));
+            return 0;
+        }
+        
         default:
             Console::print("Unknown system call: ");
             Console::print_dec(syscall_num);
             Console::print("\n");
-            return -1;
+            return -1; // ENOSYS
     }
 }
 
-// Simple test processes
+// System test processes
 namespace TestProcesses {
     
     void test_memory_allocation() noexcept {
@@ -292,12 +528,55 @@ namespace TestProcesses {
         }
     }
     
+    void test_filesystem() noexcept {
+        Console::print("Testing filesystem...\n");
+        
+        // Test directory creation
+        auto mkdir_result = FileSystem::create_directory("/test", FileSystem::FilePermissions::Default, false);
+        if (mkdir_result.has_value()) {
+            Console::print("  Directory created successfully\n");
+        } else {
+            Console::print("  Failed to create directory\n");
+        }
+        
+        // Test file creation
+        auto create_result = FileSystem::create_file("/test/hello.txt", FileSystem::FilePermissions::Default);
+        if (create_result.has_value()) {
+            Console::print("  File created successfully\n");
+            
+            // Test file write
+            auto write_result = FileSystem::Convenience::write_text_file("/test/hello.txt", "Hello ModernOS!", true);
+            if (write_result.has_value()) {
+                Console::print("  File written successfully\n");
+                
+                // Test file read
+                auto read_result = FileSystem::Convenience::read_text_file("/test/hello.txt");
+                if (read_result.has_value()) {
+                    Console::print("  File content: ");
+                    Console::print(read_result.value().c_str());
+                    Console::print("\n");
+                } else {
+                    Console::print("  Failed to read file\n");
+                }
+            } else {
+                Console::print("  Failed to write file\n");
+            }
+        } else {
+            Console::print("  Failed to create file\n");
+        }
+    }
+    
     void test_process_creation() noexcept {
         Console::print("Testing process creation...\n");
         
         // Simple lambda for test process
         auto test_proc = []() {
             Console::print("  Hello from test process!\n");
+            // Test filesystem from within process
+            auto cwd = FileSystem::get_current_directory();
+            Console::print("  Current directory: ");
+            Console::print(cwd.string().c_str());
+            Console::print("\n");
         };
         
         Process::ProcessCreateInfo create_info{};
@@ -306,15 +585,18 @@ namespace TestProcesses {
         
         auto proc_result = Process::create_process(test_proc, create_info);
         if (proc_result.has_value()) {
-            Console::print("  Process created successfully\n");
+            Console::print("  Process created successfully with PID ");
+            Console::print_dec(proc_result.value().get());
+            Console::print("\n");
         } else {
             Console::print("  Failed to create process\n");
         }
     }
     
     void run_all_tests() noexcept {
-        Console::print("\n=== Running Kernel Tests ===\n");
+        Console::print("\n=== Running System Tests ===\n");
         test_memory_allocation();
+        test_filesystem();
         test_process_creation();
         Console::print("=== Tests Complete ===\n\n");
     }
@@ -417,15 +699,34 @@ extern "C" void kernel_main64(BootConfig* boot_config) noexcept {
     Console::print("Enabling interrupts...\n");
     asm volatile("sti");
     
+    // Start interactive shell
+    Console::print("Starting interactive shell...\n");
+    auto shell_result = Shell::start_shell();
+    if (shell_result.has_value()) {
+        Console::print("Shell started with PID ");
+        Console::print_dec(shell_result.value().get());
+        Console::print("\n");
+    } else {
+        Console::print("Failed to start shell\n");
+    }
+    
     // Main kernel loop
     Console::print("Entering main kernel loop...\n");
-    Console::print("Kernel is now running. Press Ctrl+Alt+Del to restart.\n\n");
+    Console::print("ModernOS is now running!\n\n");
     
     std::uint64_t loop_count = 0;
     while (true) {
-        // Kernel idle loop
-        if ((loop_count % 1000000) == 0) {
-            Console::print(".");
+        // Kernel idle loop with less frequent output
+        if ((loop_count % 10000000) == 0) {
+            // Show system status periodically
+            auto proc_count = Process::get_process_count();
+            if (proc_count > 1) { // More than just kernel process
+                Console::set_color(0x08); // Dark gray
+                Console::print("[");
+                Console::print_dec(proc_count);
+                Console::print(" processes] ");
+                Console::set_color(0x0F); // White
+            }
         }
         
         // Yield to other processes

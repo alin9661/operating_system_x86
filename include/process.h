@@ -1,14 +1,14 @@
 #pragma once
 
-#include <cstdint>
-#include <cstddef>
-#include <memory>
-#include <expected>
-#include <concepts>
+#include "compat/cstdint"
+#include "compat/cstddef"
+#include "compat/memory"
+#include "compat/expected"
+#include "compat/concepts"
 #include <string_view>
-#include <span>
-#include <array>
-#include <atomic>
+#include "compat/span"
+#include "compat/array"
+#include "compat/atomic"
 #include <chrono>
 #include <functional>
 #include <optional>
@@ -305,7 +305,7 @@ namespace Process {
     
     // Process result type
     template<typename T>
-    using ProcessResult = std::expected<T, ProcessError>;
+    using ProcessResult = compat::expected<T, ProcessError>;
     
     // Process handle with RAII
     class ProcessHandle {
